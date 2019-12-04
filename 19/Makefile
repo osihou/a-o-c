@@ -13,3 +13,6 @@ use:
 
 3: $(D)3/$(D)3.lisp
 	$(CL) $(D)3/$(D)3.lisp
+
+4: $(D)4/$(D)4.lisp
+	$(CL) $(D)4/$(D)4.lisp
