@@ -9,3 +9,7 @@ use:
 
 2: $(D)2/$(D)2.lisp
 	$(CL) $(D)2/$(D)2.lisp
+
+
+3: $(D)3/$(D)3.lisp
+	$(CL) $(D)3/$(D)3.lisp
