@@ -16,3 +16,6 @@ use:
 
 4: $(D)4/$(D)4.lisp
 	$(CL) $(D)4/$(D)4.lisp
+
+5: $(D)5/$(D)5.lisp
+	$(CL) $(D)5/$(D)5.lisp
