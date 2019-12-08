@@ -6,10 +6,8 @@ use:
 1: $(D)1/$(D)1.lisp
 	$(CL) $(D)1/$(D)1.lisp
 
-
 2: $(D)2/$(D)2.lisp
 	$(CL) $(D)2/$(D)2.lisp
-
 
 3: $(D)3/$(D)3.lisp
 	$(CL) $(D)3/$(D)3.lisp
@@ -22,3 +20,9 @@ use:
 
 6: $(D)6/$(D)6.lisp
 	$(CL) $(D)6/$(D)6.lisp
+
+7: $(D)7/$(D)7.lisp
+	$(CL) $(D)7/$(D)7.lisp
+
+8: $(D)8/$(D)8.lisp
+	$(CL) $(D)8/$(D)8.lisp
