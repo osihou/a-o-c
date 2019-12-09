@@ -26,3 +26,7 @@ use:
 
 8: $(D)8/$(D)8.lisp
 	$(CL) $(D)8/$(D)8.lisp
+
+9: $(D)9/$(D)9.lisp
+	$(CL) $(D)9/$(D)9.lisp
+
