@@ -1,4 +1,4 @@
-;;Day 9
+;;Day 11
 
 
 (defun all-permutations (list)
@@ -183,7 +183,7 @@
 (defun gen-memory ()
   (loop for i
 	from 0
-	below 9000
+	below 1000
 	collect 0))
 
 (defun resolve-command ( program seq stack)
@@ -213,7 +213,7 @@
   (parse-string (car (read-file (open-file filename)))))
 
 
-(defvar in (open-file 'day9/input.md))
+(defvar in (open-file 'day11/input.md))
 (defvar *programe*  (append (parse-string (car (read-file in))) (gen-memory)))
 ;(print *programe*)
 ;(print (length *programe*))
