@@ -1,190 +1,154 @@
-;;Day 5
+;;;Day 5
+(format t "Day 5~%")
+(defvar *filename* 'day5/input.md)
 
-;;***FIRST*** 
-;;For 1
-;;**SECOND**
-;;For 5
+
 (defun open-file (filename)
-  "Open a file"
   (open filename :if-does-not-exist nil))
 
-(defun close-file (inx)
-  "close file"
-  (close inx))
 
 (defun read-file (inx)
-  "read file"
   (when inx
-    (loop for line = (read-line inx nil)
-		    while line
-		    collect line)))
+    (loop :for line = (read-line inx nil)
+	  :while line
+	  :collect line)))
 
 (defun parse-string (s)
-  "parse input"
   (if s
     (if (position #\, s)
-      (cons  (parse-integer (subseq s  0 (position #\, s)))
-	    ( parse-string (subseq s (+ 1 (position #\, s))))))
-      '()))
+      (cons (subseq s 0 (position #\, s))
+	    (parse-string (subseq s (+ 1 (position #\, s)))))
+      (cons s nil))))
 
-(defun sorted (lst predicate) 
-  "is list sorted"
-  (apply predicate lst))
-   
+(defun get-input ()
+  (mapcar #'parse-integer (parse-string (car (read-file (open-file *filename*))))))
+
 (defun get-seq (num)
-  "get sequance of numbers"
-  (map 'list #'digit-char-p 
+  (map 'list #'digit-char-p
        (prin1-to-string num)))
 
-;0 - position mode
-;1 - immediate mode
-
-
-; ABCDE
-; 	DE - two-digit opcode
-;	C - mode of 1st parameter
-; 	B - mode of 2nd parameter
-;	A - mode of 3rd parameter
-
-(defun pos-or-imm (seq stack program)
-  (if (= seq 0)
-    (nth  stack program)
-     stack))
-
-(defun add (program stack seq)
-  "Executes the add command"
-  (progn
-    (setf 
-      (nth (caddr stack) program) 
-      (+ 
-	(pos-or-imm (cadr seq) (car stack) program)
-	(pos-or-imm (car seq) (cadr stack) program)))
-
-    (int-machine program (cdddr stack))))
-
-(defun mult (program stack seq)
-  "Executes the mult command"
-  (progn
-    (setf 
-      (nth (caddr stack) program) 
-      (* 
-	(pos-or-imm (cadr seq) (car stack) program)
-	(pos-or-imm (car seq) (cadr stack) program)))
-    (int-machine program (cdddr stack))))
-
-(defun store (program stack)
-  "Store parameter"
-  (progn
-    (setf
-      (nth (car stack) program)
-      (progn 
-	(print '***INPUT***)
-	(read)))
-  (int-machine program (cdr stack))))
-
-(defun output (program stack seq)
-  "Print output"
-  (progn
-    (print (pos-or-imm (cadr seq) (car stack) program))
-    (int-machine program (cdr stack))))
-
-(defun cdr-machine (num lst)
-  (if (/= 0 num)
-    (cdr-machine (1- num) (cdr lst))
-    lst))
-
-(defun jump-if-true (program stack seq)
-  (if (/= (pos-or-imm (cadr seq) (car stack) program) 0)
-    (int-machine program (cdr-machine (pos-or-imm (car seq) (cadr stack) program) program))
-    (int-machine program (cddr stack))))
-
-(defun jump-if-false (program stack seq)
-  (if (= (pos-or-imm (cadr seq) (car stack) program) 0)
-    (int-machine program (cdr-machine  (pos-or-imm (car seq) (cadr stack) program) program))
-    (int-machine program (cddr stack))))
-
-
-(defun less-than (program stack seq)
-  (progn
-    (if (< (pos-or-imm (cadr seq) (car stack) program) (pos-or-imm (car seq) (cadr stack) program))
-      (setf
-	(nth (caddr stack) program)
-	1)
-      (setf
-	(nth (caddr stack) program)
-	0))
-    (int-machine program (cdddr stack))))
- 
-(defun equals (program stack seq)
-  (progn
-    (if (= (pos-or-imm (cadr seq) (car stack) program) (pos-or-imm (car seq) (cadr stack) program))
-      (setf
-	(nth (caddr stack) program)
-	1)
-      (setf
-	(nth (caddr stack) program)
-	0))
-    (int-machine program (cdddr stack))))
-   
-
-(defun execute-command (program seq stack)
-  (case (cadddr seq)
-    (1 (add program stack seq))
-    (2 (mult program stack seq))
-    (4 (output program stack seq))
-    (5 (jump-if-true program stack seq))
-    (6 (jump-if-false program stack seq))
-    (7 (less-than program stack seq))
-    (8 (equals program stack seq))))
-
-(defun resolve-command ( program seq stack)
+(defun resolve-command (seq)
   (case (length seq)
-    (1 (execute-command program `(0 0 0 ,(car seq)) stack))
-    (3 (execute-command program `(0 ,(car seq) 0 ,(caddr seq)) stack))
-    (4 (execute-command program `(1 ,(cadr seq) 0 ,(cadddr seq)) stack))))
+    (1 `(0		0 		0 		0 		,(car seq)) )
+    (2 `(0		0		0		,(car seq) 	,(cadr seq)))
+    (3 `(0		0		,(car seq) 	,(cadr seq)	,(caddr seq)))
+    (4 `(0 		,(car seq)  	,(cadr seq) 	,(caddr seq)	,(cadddr seq)))
+    (5 `(,(car seq)  	,(cadr seq) 	,(caddr seq) 	,(cadddr seq)	,(car (last seq))))))
 
-(defun int-machine (program stack )
-  "recursive int machine"
-  (if (= (car stack) 99 )
-    nil
-  (case (car stack)
-    (3 ( store program (cdr stack)))
-    (otherwise  
-      (resolve-command program 
-		       (get-seq (car stack)) (cdr stack))))))
-		
+(defun parse-opcode (in)
+  (resolve-command
+    (get-seq in)))
 
-(defvar in (open-file 'day5/input.md))
+(defun get-A (opcode)
+  (car opcode))
 
-(defvar *programe*  (parse-string (car (read-file in))))
+(defun get-B (opcode)
+  (cadr opcode))
 
-(print (length *programe*))
-;(print *programe*)
+(defun get-C (opcode)
+  (caddr opcode))
 
-(int-machine *programe* *programe*)
+(defun get-D (opcode)
+  (cadddr opcode))
+
+(defun get-E(opcode)
+  (car (last opcode)))
+
+(defun create-memory ()
+  (let* ((input (get-input))
+	 (ln (length input)))
+    (make-array ln :initial-contents input)))
+
+(defun set-memory (arr p n)
+  (setf (aref arr p) n))
+
+(defun print-memory (p)
+  (format t "~%~d " p))
+
+(defun zero-mode (memory index)
+  (aref memory (aref memory index)))
+
+(defun one-mode  (memory index)
+  (aref memory index))
+
+(defun get-mode (mode memory index)
+  (case mode
+    (0 (zero-mode memory index))
+    (1 (one-mode memory index))))
+
+(defun int-machine (memory)
+  (let ((index 0)
+	(opcode 0))
+    (loop
+      (setf opcode (parse-opcode (aref memory index)))
+      (cond
+	((= (get-E opcode) 1)
+	 (set-memory memory 
+		     (aref memory (+ index 3)) 
+		     (+ (get-mode (get-C opcode) memory (+ index 1)) 
+			(get-mode (get-B opcode) memory (+ index 2))))
+	 (incf index 4))
+
+	((= (get-E opcode) 2)
+	 (set-memory memory 
+		     (aref memory (+ index 3)) 
+		     (* (get-mode (get-C opcode) memory (+ index 1)) 
+			(get-mode (get-B opcode) memory (+ index 2))))
+	 (incf index 4))
+
+	((= (get-E opcode) 3)
+	 (set-memory memory (aref memory (+ index 1)) (read))
+	 (incf index 2))
+
+	((= (get-E opcode) 4)
+	 (print-memory (get-mode (get-C opcode) memory (+ index 1)))
+	 (incf index 2))
+
+	((= (get-E opcode) 5)
+	 (if (/= (get-mode (get-C opcode) memory (+ index 1)) 0)
+	   (setf index (get-mode (get-B opcode) memory (+ index 2)))
+	   (incf index 3)))
+	 
+	((= (get-E opcode) 6)
+	 (if (= (get-mode (get-C opcode) memory (+ index 1)) 0)
+	   (setf index (get-mode (get-B opcode) memory (+ index 2)))
+	   (incf index 3)))
+
+	((= (get-E opcode) 7)
+	 (if (< (get-mode (get-C opcode) memory (+ index 1))
+		(get-mode (get-B opcode) memory (+ index 2)))
+	   (set-memory memory (aref memory (+ index 3)) 1)
+	   (set-memory memory (aref memory (+ index 3)) 0))
+	 (incf index 4))
+
+	((= (get-E opcode) 8)
+	 (if (= (get-mode (get-C opcode) memory (+ index 1))
+		(get-mode (get-B opcode) memory (+ index 2)))
+	   (set-memory memory (aref memory (+ index 3)) 1)
+	   (set-memory memory (aref memory (+ index 3)) 0))
+	 (incf index 4))
+
+	((and (= (get-E opcode) 9) (= (get-D opcode) 9)) (return opcode))))))
+
+(defun start-machine ()
+  (let ((mem (create-memory)))
+      (int-machine mem)))
+
+(defun day5-first ()
+  (progn
+    (format t "First: ~%")
+    (format t "Please provide 1~%")
+    (start-machine)))
+
+(day5-first)
+
+(defun day5-second ()
+  (progn
+    (format t "~%Second:  ~%")
+    (format t "Please provide 5~%")
+    (start-machine)))
+
+(day5-second)
 
 
-(close-file in)
 
-;***TESTS***
-(print '***TESTS***)
-
-(defun test-program (lst)
-  (let ((test lst))
-    (progn
-      (int-machine lst test)
-      (print lst))))
-
-;(test-program '(1101 100 -1 4 0))
-;(test-program '(1002 4 3 4 33))
-;(test-program '(104 1 99))
-;(test-program '(4 1 99))
-;(test-program '(3 3 14 4  99))
-;(test-program '(3 9 8 9 10 9 4 9  99 -1 8))
-;(test-program '(3 12 6 12 15 1 13 14 13 4 13 99 -1 0 1 9))
-;(test-program '(3 3 1107 -1 8 3 4 3 99))
-;(test-program '(3 3 1105 -1 9 1101 0 0 12 4 12 99 1))
-;(test-program '(3 3 1108 -1 8 3 4 3 99))
-;(test-program '(3 9 7 9 10 9 4 9 99 -1 8))
-;(test-program '(3 21 1008 21 8 20 1005 20 22 107 8 21 20 1006 20 31 1106 0 36 98 0 0 1002 21 125 20 4 20 1105 1 46 114 999 1105 1 46 1101 1000 1 20 4 20 1105 1 46 98 99))
-;(test-program '(1107 9 1 5 14 0 99))
