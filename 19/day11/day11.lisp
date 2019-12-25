@@ -1,234 +1,248 @@
-;;Day 11
-
-
-(defun all-permutations (list)
-  "all posible permutations"
-  (cond ((null list) nil)
-	((null (cdr list)) (list list))
-	 (t (loop for element in list
-		  append (mapcar (lambda (x) (cons element x))
-				 (all-permutations (remove element list)))))))
-
+;iDay 11
+(format t "Day 11~%")
+(defvar *filename* 'day11/input.md)
 
 (defun open-file (filename)
-  "Open a file"
   (open filename :if-does-not-exist nil))
 
-(defun close-file (inx)
-  "close file"
-  (close inx))
 
 (defun read-file (inx)
-  "read file"
   (when inx
-    (loop for line = (read-line inx nil)
-		    while line
-		    collect line)))
+    (loop :for line = (read-line inx nil)
+	  :while line
+	  :collect line)))
 
 (defun parse-string (s)
-  "parse input"
   (if s
     (if (position #\, s)
-      (cons  (parse-integer (subseq s  0 (position #\, s)))
-	    ( parse-string (subseq s (+ 1 (position #\, s))))))
-      '()))
+      (cons (subseq s 0 (position #\, s))
+	    (parse-string (subseq s (+ 1 (position #\, s)))))
+      (cons s nil))))
 
-(defun sorted (lst predicate) 
-  "is list sorted"
-  (apply predicate lst))
-   
+(defun get-input (filename)
+  (mapcar #'parse-integer 
+	  (parse-string (car (read-file (open-file filename))))))
+
 (defun get-seq (num)
-  "get sequance of numbers"
-  (map 'list #'digit-char-p 
+  (map 'list #'digit-char-p
        (prin1-to-string num)))
 
-(defun cdr-machine (num lst)
-  (if (/= 0 num)
-    (cdr-machine (1- num) (cdr lst))
-    lst))
 
-(defun ckr (lst)
-  (car (cddr (cddr lst))))
+(defun get-additional-memory (n)
+  (loop :for i
+	:from 0
+	:to n
+	:collect 0))
 
-;;***MACHINE***
-
-(defvar *relative-base* 0 )
-
-(defun pos-or-imm (seq stack program)
-  (case  seq 
-    (0 (nth  stack program))
-    (1 stack)
-    (2 (nth (+ *relative-base* stack) program)))) 
-
-(defun add (program stack seq)
-  "opcode 01 adds together numbers read from two positions and stores the
-  resoult in the third position XXX01 A B C"
-  (progn
-    (case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 
-		      (+ (pos-or-imm (caddr seq) (car stack) program)
-		      (pos-or-imm (cadr seq) (cadr stack) program))))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 
-		      (+ (pos-or-imm (caddr seq) (car stack) program)
-		      (pos-or-imm (cadr seq) (cadr stack) program))))) 
-	
-    (int-machine program (cdddr stack))))
-
-(defun mult (program stack seq)
-  "opcode 02 multiplies the two inputs from two positions and stores the
-  resoult in the third position XXX02 A B C"
-  (progn
-    (case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 
-		      (* (pos-or-imm (caddr seq) (car stack) program)
-		      (pos-or-imm (cadr seq) (cadr stack) program))))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 
-		      (* (pos-or-imm (caddr seq) (car stack) program)
-		      (pos-or-imm (cadr seq) (cadr stack) program))))) 
-	    (int-machine program (cdddr stack))))
-
-(defun store (program stack seq)
-  "opcode 03 takes a single integer as input and saves it to the position 
-  given by its only parameter"
-  (progn
-    (print 'INPUT)
-	   (case (caddr seq) 
-	     (0 (setf (nth (car stack) program) (read)))
-	     (2 (setf (nth (+ *relative-base* (car stack)) program) (read))))
-  (int-machine program (cdr stack))))
-
-(defun output (program stack seq)
-  "opcode 4 outputs the value of its only parameter"
-  (progn
-    (print (pos-or-imm (caddr seq) (car stack) program))
-    (int-machine program (cdr stack))))
-
-(defun jump-if-true (program stack seq)
-  "opcode 05 is jump-if-true, if the first argument is non-zero, it sets the instruction
-  pointer to the value from the second parameter"
-  (if (/= (pos-or-imm (caddr seq) (car stack) program) 0)
-    (int-machine program (cdr-machine (pos-or-imm (cadr seq) (cadr stack) program) program))
-    (int-machine program (cddr stack))))
-
-(defun jump-if-false (program stack seq)
-  "opcode 06 is jump-if-false, if the first parameter is zero, it sets the instruction 
-  pointer to the value from the second parameter"
-  (if (= (pos-or-imm (caddr seq) (car stack) program) 0)
-    (int-machine program (cdr-machine  (pos-or-imm (cadr seq) (cadr stack) program) program))
-    (int-machine program (cddr stack))))
+(defun create-memory (filename)
+  (let* ((input (append (get-input filename) (get-additional-memory 1000)))
+	 (ln (length input)))
+    (make-array ln :initial-contents input )))
 
 
-(defun less-than (program stack seq)
-  "opcode 07 is less-than, if the first parameter is less than the second 
-  parameter it stores 1 in the position given by third parameter, otherwise it 
-  stores 0"
-  (progn
-    (if (< (pos-or-imm (caddr seq) (car stack) program) (pos-or-imm (cadr seq) (cadr stack) program))
-	(case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 1))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 1)))
-	
-      	(case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 0))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 0))))
-
-    (int-machine program (cdddr stack))))
- 
-(defun equals (program stack seq)
-  "opcode 08 is equals, if the first parameter is equalt to the second 
-  parameter, it stores 1 in the position given by the third parameter,
-  otherwise it stores 0"
-  (progn
-    (if (= (pos-or-imm (caddr seq) (car stack) program) (pos-or-imm (cadr seq) (cadr stack) program))
-      	(case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 1))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 1)))
-      	(case (car seq) 
-	     (0 (setf (nth (caddr stack) program) 0))
-	     (2 (setf (nth (+ *relative-base* (caddr stack)) program) 0))))
-
-    (int-machine program (cdddr stack))))
-
-
-(defun adjust-base (program stack seq)
-  "the 09 opcode to adjust the base"
-  (progn
-    (setf *relative-base* 
-	  (+ *relative-base* 
-	     (pos-or-imm (caddr seq) (car stack) program)))
-    (int-machine program (cdr stack))))
-   
-
-(defun execute-command (program seq stack)
-  (case (ckr seq)
-    (1 (add program stack seq))
-    (2 (mult program stack seq))
-    (3 (store program stack seq))
-    (4 (output program stack seq))
-    (5 (jump-if-true program stack seq))
-    (6 (jump-if-false program stack seq))
-    (7 (less-than program stack seq))
-    (8 (equals program stack seq))
-    (9 (adjust-base program stack seq))))
-
-;; ABCDE
-; 	C - mode of the first parameter
-; 	B - mode of the second parameter
-;	A - mode of the third parameter
-;
-;	0 - position mode
-;	1 - immediate-mode
-;	2 - relative-mode
-
-(defun gen-memory ()
-  (loop for i
-	from 0
-	below 1000
-	collect 0))
-
-(defun resolve-command ( program seq stack)
+(defun resolve-command (seq)
   (case (length seq)
-    (1 (execute-command program `( 0 		0 		0 		0 	,(car seq)) stack))
-    (3 (execute-command program `( 0 		0 		,(car seq) 	0 	,(caddr seq)) stack))
-    (4 (execute-command program `( 0  		,(car seq) 	,(cadr seq) 	0 	,(cadddr seq)) stack))
-    (5 (execute-command program `( ,(car seq) 	,(cadr seq) 	,(caddr seq) 	0 	,(ckr seq)) stack))))
+    (1 `(0		0 		0 		0 		,(car seq)) )
+    (2 `(0		0		0		,(car seq) 	,(cadr seq)))
+    (3 `(0		0		,(car seq) 	,(cadr seq)	,(caddr seq)))
+    (4 `(0 		,(car seq)  	,(cadr seq) 	,(caddr seq)	,(cadddr seq)))
+    (5 `(,(car seq)  	,(cadr seq) 	,(caddr seq) 	,(cadddr seq)	,(car (last seq))))))
+
+(defun parse-opcode (in)
+  (resolve-command
+    (get-seq in)))
 
 
-(defun int-machine (program stack )
-  "recursive int machine"
-;  (progn 
-;    (print stack)
-;    (print program)
-;    (print *relative-base*)
-;    (read)
-  (if (= (car stack) 99 )
-    nil
-    (if (car stack)
-      (resolve-command program 
-		       (get-seq (car stack)) (cdr stack)))))
-;)
-		
+(defun get-A (opcode)
+  (car opcode))
 
-(defun get-program (filename)
-  (parse-string (car (read-file (open-file filename)))))
+(defun get-B (opcode)
+  (cadr opcode))
 
+(defun get-C (opcode)
+  (caddr opcode))
 
-(defvar in (open-file 'day11/input.md))
-(defvar *programe*  (append (parse-string (car (read-file in))) (gen-memory)))
-;(print *programe*)
-;(print (length *programe*))
-(int-machine *programe* *programe*)
+(defun get-D (opcode)
+  (cadddr opcode))
 
-;(print *programe*)
-;***TESTS***
-(print '***TESTS***)
+(defun get-E(opcode)
+  (car (last opcode)))
 
-(defun test-program (lst)
-  (let ((test lst))
+(defun set-memory (memory mode index relative n)
+  (let ((current (aref memory index)))
+    (case mode 
+      (0 (setf (aref memory current) n))
+      (2 (setf (aref memory (+ current relative)) n)))))
+
+(defun zero-mode (memory index)
+  (aref memory (aref memory index)))
+
+(defun one-mode  (memory index)
+  (aref memory index))
+
+(defun two-mode (memory index relative)
+  (aref memory (+ (aref memory index) relative)))
+
+(defun get-mode (mode memory index relative)
+  (case mode
+    (0 (zero-mode memory index))
+    (1 (one-mode memory index))
+    (2 (two-mode memory index relative))))
+
+(defun read-color (x y info)
+  (aref info x y))
+
+(defun turn-robot (alf cm)
+  (let ((cnd (= alf 1)))
+    (cond
+      ((eq cm 'N)
+       (if cnd
+	 (setf cm 'E)
+	 (setf cm 'W)))
+      ((eq cm 'S)
+       (if cnd
+	 (setf cm 'W)
+	 (setf cm 'E)))
+      ((eq cm 'E)
+       (if cnd
+	 (setf cm 'S)
+	 (setf cm 'N)))
+      ((eq cm 'W)
+       (if cnd
+	 (setf cm 'N)
+	 (setf cm 'S)))
+      )))
+
+(defun move-robot (x y cm)
+  (cond 
+    ((eq cm 'N) (setf y (1+ y)))
+    ((eq cm 'S) (setf y (1- y)))
+    ((eq cm 'E) (setf x (1+ x)))
+    ((eq cm 'W) (setf x (1- x)))))
+    
+
+(defun move-if (output pst info)
+  (if (and (/= (aref output 1) 999)  (/= (aref output 1) 999))
+    (progn 
+      (setf (aref info (car pst) (cadr pst)) (aref output 0))
+      (turn-robot (aref output 1) (caddr pst))
+      (move-robot pst)
+      (setf (aref output 1) 999)
+      (setf (aref output 0) 999)
+      )))
+
+(defun print-memory (p output x y cm info)
+  (if (= output 0)
     (progn
-      (int-machine lst test)
-      (print lst))))
+      (setf (aref info x y) p)
+      (setf output 1))
 
-;(test-program  (append '(109 1 204 -1 1001 100 1 100 1008 100 16 101 1006 101 0 99) (gen-memory)))
+    (progn
+      (turn-robot p cm)
+      (move-robot x y cm)
+      (setf output 0))))
 
-;(test-program  (append '(1102 34915192 34915192 7 4 7 99 0) (gen-memory)))
+
+
+(defun int-machine (memory info)
+  (let ((index 0)
+	(opcode 0)
+	(relative 0)
+	(x 75)
+	(y 75)
+	(cm 'N)
+	(output 0))
+
+    (loop
+      (setf opcode (parse-opcode (aref memory index)))
+      (cond
+	((= (get-E opcode) 1)
+	 (set-memory memory (get-A opcode) (+ index 3) relative 
+		     (+ (get-mode (get-C opcode) memory (+ index 1) relative) 
+			(get-mode (get-B opcode) memory (+ index 2) relative)))
+	 (incf index 4))
+
+	((= (get-E opcode) 2)
+	 (set-memory memory  (get-A opcode) (+ index 3) relative
+		     (* (get-mode (get-C opcode) memory (+ index 1) relative) 
+			(get-mode (get-B opcode) memory (+ index 2) relative)))
+	 (incf index 4))
+
+
+
+
+	((= (get-E opcode) 3)
+	 (set-memory memory (get-C opcode) (+ index 1) relative (read-color x y info))
+	 (incf index 2))
+
+
+	((= (get-E opcode) 4)
+	 (print-memory (get-mode (get-C opcode) memory (+ index 1) relative) output x y cm info)
+	 (incf index 2))
+
+
+
+
+
+
+	((= (get-E opcode) 5)
+	 (if (/= (get-mode (get-C opcode) memory (+ index 1) relative) 0)
+	   (setf index (get-mode (get-B opcode) memory (+ index 2) relative))
+	   (incf index 3)))
+	 
+	((= (get-E opcode) 6)
+	 (if (= (get-mode (get-C opcode) memory (+ index 1) relative) 0)
+	   (setf index (get-mode (get-B opcode) memory (+ index 2) relative))
+	   (incf index 3)))
+
+	((= (get-E opcode) 7)
+	 (if (< (get-mode (get-C opcode) memory (+ index 1) relative)
+		(get-mode (get-B opcode) memory (+ index 2) relative))
+	   (set-memory memory (get-A opcode) (+ index 3) relative 1)
+	   (set-memory memory (get-A opcode) (+ index 3) relative 0))
+	 (incf index 4))
+
+	((= (get-E opcode) 8)
+	 (if (= (get-mode (get-C opcode) memory (+ index 1) relative)
+		(get-mode (get-B opcode) memory (+ index 2) relative))
+	   (set-memory memory (get-A opcode) (+ index 3) relative 1)
+	   (set-memory memory (get-A opcode) (+ index 3) relative 0))
+	 (incf index 4))
+
+	((and (= (get-E opcode) 9) (= (get-D opcode) 0))
+	 (setf relative (+ relative (get-mode (get-C opcode) memory (+ index 1) relative)))
+	 (incf index 2))
+
+	((and (= (get-E opcode) 9) (= (get-D opcode) 9)) 
+	 (return info))))))
+
+
+(defun make-canvas ()
+  (make-array '(150 150) :initial-element 0))
+
+
+(defun to-image (bn)
+  (if (= bn 0)
+    '\X
+    '\`))
+
+(defun print-matrix (matrix)
+  (let ((dim (array-dimensions matrix)))
+    (loop :for i
+	  :from 0
+	  :below (car dim)
+	  :do (loop :for j
+		    :from 0
+		    :below (cadr dim)
+		    :do (format t "~a " (to-image (aref matrix i j))))
+	  :do (format t "~%"))))
+
+
+(defun start-machine ()
+  (let ((mem (create-memory *filename*))
+	(canvas (make-canvas)))
+    (progn
+      (print-matrix (int-machine mem canvas)))))
+
+(start-machine)
+
