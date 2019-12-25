@@ -1,5 +1,5 @@
 ;;Day 12
-
+(format t "Day 12~%")
 (defparameter *filename* 'day12/input.md)
 
 (defun flatten (lst &optional stack out)
@@ -53,20 +53,13 @@
 		(parse-string-z seq))))
 	
 
-
 (defun read-inputs (file)
   (reverse (cdr (reverse (read-file (open-file file))))))
-
-;(print (read-inputs *filename*))
 
 (defun get-values()
   (loop :for line 
 	:in (read-inputs *filename*)
 	:collect (list (parse-xyz (parse-position line)) (list 0 0 0 ))))
-
-;(print (flat-vtr (get-values)))
-
-;(print (get-values))
 
       
 (defun coordinates-selector (x)
@@ -111,13 +104,13 @@
 	   (reduce #'+ (mapcar #'abs (second planet))))))
 
 (defun day12-first()
-  (loop :with coordinates := (get-values)
-	:repeat 1000
-	:do (simulate coordinates)
-	:finally (return (total-energy coordinates))))
+  (format t "First: ~d~%" (loop :with coordinates := (get-values)
+				:repeat 1000
+				:do (simulate coordinates)
+				:finally (return (total-energy coordinates)))))
 
 
-(print (day12-first))
+(day12-first)
 
 (defun detect (planets)
   (loop :for current := (simulate (cpy-lst planets))
@@ -130,11 +123,12 @@
 
 (defun day12-second ()
   (let ((planets (get-values)))
-    (apply #'lcm (mapcar (lambda (c) 
-			   (detect 
-			     (mapcar (coordinates-selector c) planets)))
-			 '(0 1 2)))))
+    (format t "Second: ~d~%"  (apply #'lcm 
+				     (mapcar (lambda (c) 
+						     (detect 
+						       (mapcar (coordinates-selector c) planets)))
+					     '(0 1 2))))))
 
 
 
-(print (day12-second))
+(day12-second)
