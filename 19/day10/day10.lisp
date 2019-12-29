@@ -1,22 +1,18 @@
 ;;Day 10
+(format t "Day 10")
+(defvar *filename* 'day10/day10.lisp)
+(setq *read-default-float-format* 'long-float)
 
 (defun open-file (filename)
-  "Open a file"
   (open filename :if-does-not-exist nil))
 
-(defun close-file (inx)
-  "close file"
-  (close inx))
-
 (defun read-file (inx)
-  "read file"
   (when inx
     (loop for line = (read-line inx nil)
 		    while line
 		    collect line)))
 
 (defun parse-string (s)
-  "parse input"
   (if s
     (if (position #\, s)
       (cons  (parse-integer (subseq s  0 (position #\, s)))
@@ -24,21 +20,15 @@
       '()))
 
 (defun sorted (lst predicate) 
-  "is list sorted"
   (apply predicate lst))
    
 (defun get-seq (num)
-  "get sequance of numbers"
   (map 'list #'digit-char-p 
        (prin1-to-string num)))
-
-
 
 (defun open-and-read (file)
   (read-file
 	 (open-file file)))
-
-
 
 (defun get-letters (wrd)
   (loop :for chr 
@@ -57,21 +47,17 @@
 		       :if (eq ltr #\#)
 		       :collect (cons i j))))
 
-(setq *read-default-float-format* 'long-float)
 (defun vtr-length (vtr)
   (let ((x (car vtr)) (y (cdr vtr)))
     (sqrt (+ (* x x) (*  y y)))))
 
 (defun get-vector (point1 point2)
-  "from point1 to point2"
   (let ((x1 (car point1)) 
 	(y1 (cdr point1)) 
 	(x2 (car point2)) 
 	(y2 (cdr point2)))
     (cons (- x2 x1) (-  y2 y1))))
 
-;(defun angle (vtr)
-;  (float (acos (/ (float (car vtr)) (float (vtr-length vtr))))))
 
 (defun angle (vtr)
   (let ((value
@@ -123,22 +109,33 @@
   (loop :for i 
 	:in lst
 	:collect (length-of-unique i lst)))
-;(print (length (unique-values( angles (car (flat-vtr (get-coordinates (open-and-read 'day10/input.md)))) (flat-vtr (get-coordinates (open-and-read 'day10/input.md))))))
+
 (defvar *count* (get-visible (flat-vtr (get-coordinates (open-and-read 'day10/input.md)))))
 
-(defvar *biggest* (loop :for i
-	     :in (get-visible (flat-vtr (get-coordinates (open-and-read 'day10/input.md))))
-	     :maximize i
-	     :into biggest
-	     :finally (return biggest)))
+;(defvar *biggest* (loop :for i
+;	     :in (get-visible (flat-vtr (get-coordinates (open-and-read 'day10/input.md))))
+;	     :maximize i
+;	     :into biggest
+;	     :finally (return biggest)))
 		
 
-(defvar *len* (- (length *count*) (length (member *biggest* *count*))))
-(print (nth *len* (flat-vtr (get-coordinates (open-and-read 'day10/input.md)))))
-(defvar *sorted* (sort (angles '(29 . 26) (flat-vtr (get-coordinates (open-and-read 'day10/input.md))))  #'<))
-(defvar *usorted* (append (member  pi  *sorted*) (set-difference *sorted* (member  pi  *sorted*))))
 
-(print *usorted*)
+(defun day10-first ()
+  (format t "First: ~d~%" (loop :for i
+				:in (get-visible (flat-vtr (get-coordinates (open-and-read *filename*))))
+				:maximize i
+				:into biggest
+				:finally (return biggest))))
+
+(day10-first)
+
+;(print *biggest*)
+;(defvar *len* (- (length *count*) (length (member *biggest* *count*))))
+;(print (nth *len* (flat-vtr (get-coordinates (open-and-read 'day10/input.md)))))
+;(defvar *sorted* (sort (angles '(29 . 26) (flat-vtr (get-coordinates (open-and-read 'day10/input.md))))  #'<))
+;(defvar *usorted* (append (member  pi  *sorted*) (set-difference *sorted* (member  pi  *sorted*))))
+
+;(print *usorted*)
 
 
 
