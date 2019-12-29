@@ -1,18 +1,15 @@
 ;;Day 3
+(format t "Day 3~%")
+(defvar *filename* 'day3/input.md)
 
-;;***FIRST***
 (defun open-file (filename)
   (open filename :if-does-not-exist nil))
 
-(defun close-file (inx)
-  (close inx))
-
-
 (defun read-file (inx)
   (when inx
-    (loop for line = (read-line inx nil)
-		    while line
-		    collect line)))
+    (loop :for line = (read-line inx nil)
+	  :while line
+	  :collect line)))
 
 (defun parse-string (s)
   (if s
@@ -64,7 +61,6 @@
   (+ (get-length (list (car line1) (car line2)))
      (get-length (list (cadr line1) (cadr line2)))))
 
-
 (defun manchatan (line1 line2)
   (if (and line1 line2)
       (if ( = ( + ( get-length line1) (get-length  line2)) (get-relative-length  line1 line2))
@@ -83,34 +79,21 @@
 (defvar *ln* '())
 
 (defun cycle-through (line-1 line2)
-  (loop for i in line-1
-	do
-	(progn
-	  (loop for j in line2
-	  do
-	  (progn 
-	    (let ((x (manchatan i  j)))
-	      (if x
-		(setf *ln* (append *ln*  (point x))))))))))
+  (loop :for i 
+	:in line-1
+	:do (loop :for j 
+		    :in line2
+		    :do  
+			  (let ((x (manchatan i  j)))
+			    (if x
+			      (setf *ln* (append *ln*  (point x))))))))
 
 (cycle-through *line1* *line2*)
 
-(print (loop
-  	for i 
-  	in (cdr (mapcar #'get-distance *ln*))
-  	minimize i))
-
-;;***SECOND***
+(defun day3-first ()
+  (format t "First: ~d~%" (loop :for i
+			      :in (cdr (mapcar #'get-distance *ln*))
+			      :minimize i)))
 
 
-
-
-
-
-
-
-
-
-;;***TESTS***
-;(print '***TESTS***)
-;(print (create-line '((R . 8) (U . 5) (L . 5) (D . 3))))
+(day3-first)
