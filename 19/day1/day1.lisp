@@ -39,7 +39,7 @@
 	    (+ fuel (+ value (sum-of-fuels  (sum-of-fuel (list value)))))))))
 
 (defun day1-second ()
-  (format t "Second: ~d~%" (reduce #'+ (mapcar #'correction (get-input)))))
+  (format t "~%Second: ~d~%" (reduce #'+ (mapcar #'correction (get-input)))))
 
 (day1-second)
 
