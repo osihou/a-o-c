@@ -1,0 +1,2 @@
+dims<-readLines("./input.txt")
+
